@@ -16,6 +16,7 @@ function matricesgradution()
     clear; clc;
 
     % --- تعريف الألوان ---
+    global c_red c_green c_blue c_cyan c_yellow c_reset;
     c_red = '\033[1;31m';
     c_green = '\033[1;32m';
     c_blue = '\033[1;34m';
@@ -55,7 +56,7 @@ function matricesgradution()
         choiceInput = input(sprintf('\n%s>> Select Category (1-4): %s', c_cyan, c_reset), 's');
         mainChoice = str2double(choiceInput);
         
-        if isnan(mainChoice)
+        if isnan(mainChoice) || ~ismember(mainChoice, 1:4)
             fprintf('%s!! Invalid Input: Please enter a NUMBER (1-4).%s\n', c_red, c_reset);
             pauseReturn();
             continue;
@@ -63,53 +64,90 @@ function matricesgradution()
         
         switch mainChoice
             case 1 
-                fprintf('\n%s--- Matrix Operations ---%s\n', c_blue, c_reset);
-                A = input(sprintf('%s>> Enter Matrix A (e.g., [1 2; 3 4]): %s', c_yellow, c_reset));
-                fprintf('\n%s[Matrix Sub-Menu]%s\n', c_green, c_reset);
-                fprintf('1. Addition (A+B)    2. Subtraction (A-B)    3. Multiplication (A*B)\n');
-                fprintf('4. Inverse (A^-1)   5. Rank                  6. Gaussian Steps\n');
-                fprintf('7. Full Characteristic Analysis (Matrix, Eq, & Eigenvalues)\n');
-                op = input(sprintf('%s>> Choice: %s', c_cyan, c_reset));
-                
-                if ismember(op, [1, 2, 3])
-                    B = input(sprintf('%s>> Enter Matrix B: %s', c_yellow, c_reset));
-                    [res, steps] = performBasicOps(A, B, op);
-                else
-                    [res, steps] = performMatrixOp(A, op);
+                stayInCategory = true;
+                while stayInCategory
+                    clc;
+                    fprintf('\n%s--- Matrix Operations ---%s\n', c_blue, c_reset);
+                    A = getRobustMatrixInput(sprintf('%s>> Enter Matrix A (e.g., [1 2; 3 4]): %s', c_yellow, c_reset));
+                    
+                    fprintf('\n%s[Matrix Sub-Menu]%s\n', c_green, c_reset);
+                    fprintf('1. Addition (A+B)    2. Subtraction (A-B)    3. Multiplication (A*B)\n');
+                    fprintf('4. Inverse (A^-1)   5. Rank                  6. Gaussian Steps\n');
+                    fprintf('7. Full Characteristic Analysis (Matrix, Eq, & Eigenvalues)\n');
+                    
+                    % Loop to ensure valid operation choice
+                    validOp = false;
+                    while ~validOp
+                        opStr = input(sprintf('%s>> Choice (1-7): %s', c_cyan, c_reset), 's');
+                        op = str2double(opStr);
+                        if ismember(op, 1:7), validOp = true;
+                        else, fprintf('%s!! Invalid Choice. Please enter a number between 1 and 7.%s\n', c_red, c_reset); end
+                    end
+                    
+                    if ismember(op, [1, 2, 3])
+                        B = getRobustMatrixInput(sprintf('%s>> Enter Matrix B: %s', c_yellow, c_reset));
+                        [res, steps] = performBasicOps(A, B, op);
+                    else
+                        [res, steps] = performMatrixOp(A, op);
+                    end
+                    
+                    % Check if operation caused a math error (like dimension mismatch)
+                    if strncmp(steps, 'Error', 5)
+                        fprintf('\n%s%s%s\n', c_red, steps, c_reset);
+                    else
+                        fprintf('\n%s--- Solution Steps ---%s\n%s\n', c_blue, c_reset, steps);
+                        if ~isempty(res)
+                            fprintf('%sResulting Matrix/Value:%s\n', c_green, c_reset); disp(res); 
+                        end
+                        sessionReport = [sessionReport; {'Matrix Operation Path'}; {steps}; {'----------------'}]; %#ok<AGROW>
+                    end
+                    
+                    stayInCategory = postOperationMenu();
                 end
-                
-                fprintf('\n%s--- Solution Steps ---%s\n%s\n', c_blue, c_reset, steps);
-                if ~isempty(res)
-                    fprintf('%sResulting Matrix/Value:%s\n', c_green, c_reset); disp(res); 
-                end
-                sessionReport = [sessionReport; {'Matrix Operation Path'}; {steps}; {'----------------'}]; %#ok<AGROW>
-                pauseReturn();
 
             case 2 
-                fprintf('\n%s--- Solving System AX = B ---%s\n', c_blue, c_reset);
-                A = input(sprintf('%s>> Enter Coefficient Matrix A: %s', c_yellow, c_reset));
-                B = input(sprintf('%s>> Enter Constants Vector B: %s', c_yellow, c_reset));
-                [X, steps] = solveSystemWithDetails(A, B);
-                
-                fprintf('\n%s--- Solution Steps ---%s\n%s\n', c_blue, c_reset, steps);
-                if ~isempty(X)
-                    fprintf('%sSolution Vector X:%s\n', c_green, c_reset); disp(X); 
+                stayInCategory = true;
+                while stayInCategory
+                    clc;
+                    fprintf('\n%s--- Solving System AX = B ---%s\n', c_blue, c_reset);
+                    A = getRobustMatrixInput(sprintf('%s>> Enter Coefficient Matrix A: %s', c_yellow, c_reset));
+                    B = getRobustMatrixInput(sprintf('%s>> Enter Constants Vector B: %s', c_yellow, c_reset));
+                    [X, steps] = solveSystemWithDetails(A, B);
+                    
+                    if strncmp(steps, 'Error', 5)
+                        fprintf('\n%s%s%s\n', c_red, steps, c_reset);
+                    else
+                        fprintf('\n%s--- Solution Steps ---%s\n%s\n', c_blue, c_reset, steps);
+                        if ~isempty(X)
+                            fprintf('%sSolution Vector X:%s\n', c_green, c_reset); disp(X); 
+                        end
+                        sessionReport = [sessionReport; {'Solving Linear System AX=B'}; {steps}; {'----------------'}]; %#ok<AGROW>
+                    end
+                    
+                    stayInCategory = postOperationMenu();
                 end
-                sessionReport = [sessionReport; {'Solving Linear System AX=B'}; {steps}; {'----------------'}]; %#ok<AGROW>
-                pauseReturn();
 
             case 3 
-                fprintf('\n%s--- Theory of Equations ---%s\n', c_blue, c_reset);
-                eqStr = input(sprintf('%s>> Enter Equation (e.g., x^2 - 5*x + 6): %s', c_yellow, c_reset), 's');
-                [sol, steps] = solveSymbolicEq(eqStr);
-                
-                fprintf('\n%s--- Theory Steps ---%s\n%s\n', c_blue, c_reset, steps);
-                if ~isempty(sol)
-                    fprintf('%sRoots:%s\n', c_green, c_reset); disp(sol); 
-                    plotAscii(eqStr); % رسم المعادلة
+                stayInCategory = true;
+                while stayInCategory
+                    clc;
+                    fprintf('\n%s--- Theory of Equations ---%s\n', c_blue, c_reset);
+                    eqStr = input(sprintf('%s>> Enter Equation (e.g., x^2 - 5*x + 6): %s', c_yellow, c_reset), 's');
+                    [sol, steps] = solveSymbolicEq(eqStr);
+                    
+                    if strncmp(steps, 'Error', 5)
+                        fprintf('\n%s%s%s\n', c_red, steps, c_reset);
+                    else
+                        fprintf('\n%s--- Theory Steps ---%s\n%s\n', c_blue, c_reset, steps);
+                        if ~isempty(sol)
+                            fprintf('%sRoots:%s\n', c_green, c_reset); disp(sol); 
+                            plotAscii(eqStr); 
+                        end
+                        sessionReport = [sessionReport; {['Equation Solving: ', eqStr]}; {steps}; {'----------------'}]; %#ok<AGROW>
+                    end
+                    
+                    stayInCategory = postOperationMenu();
                 end
-                sessionReport = [sessionReport; {['Equation Solving: ', eqStr]}; {steps}; {'----------------'}]; %#ok<AGROW>
-                pauseReturn();
 
             case 4 
                 keepRunning = false;
@@ -125,17 +163,50 @@ function matricesgradution()
                 fprintf('\n%s================================================%s\n', c_green, c_reset);
                 fprintf('%sNOTE: Please SELECT and COPY the text above to save your report.%s\n', c_cyan, c_reset);
                 fprintf('%sSession ended. Thank you!%s\n', c_yellow, c_reset);
-                
-            otherwise
-                fprintf('%sInvalid selection. Please try again.%s\n', c_red, c_reset);
-                pauseReturn();
+        end
+    end
+end
+
+%% --- NEW HELPER: Robust Matrix Input (Prevents Crashes) ---
+function M = getRobustMatrixInput(promptText)
+    global c_red c_reset;
+    while true
+        str = input(promptText, 's');
+        if isempty(str), continue; end
+        try
+            M = eval(str);
+            if isnumeric(M) || islogical(M)
+                break;
+            else
+                fprintf('%s!! Error: Input must be a numerical matrix. Try again.%s\n', c_red, c_reset);
+            end
+        catch
+            fprintf('%s!! Syntax Error: Check your brackets/spaces (e.g., [1 2; 3 4]). Try again.%s\n', c_red, c_reset);
+        end
+    end
+end
+
+%% --- NEW HELPER: Post-Operation Menu (Go Back or Main Menu) ---
+function stay = postOperationMenu()
+    global c_cyan c_yellow c_red c_reset;
+    while true
+        fprintf('\n%s[What would you like to do next?]%s\n', c_cyan, c_reset);
+        fprintf('1. Return to MAIN MENU\n');
+        fprintf('2. Go back ONE STEP (Retry or New Operation)\n');
+        c = input(sprintf('%s>> Choice (1-2): %s', c_yellow, c_reset), 's');
+        if strcmp(c, '1')
+            stay = false; break;
+        elseif strcmp(c, '2')
+            stay = true; break;
+        else
+            fprintf('%s!! Invalid choice. Enter 1 or 2.%s\n', c_red, c_reset);
         end
     end
 end
 
 %% --- Helper Function for UX Pause ---
 function pauseReturn()
-    input(sprintf('\n\033[1;33mPress [Enter] to return to the Main Menu...\033[0m'), 's');
+    input(sprintf('\n\033[1;33mPress [Enter] to continue...\033[0m'), 's');
 end
 
 %% --- ASCII Plotter ---
