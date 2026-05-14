@@ -44,7 +44,7 @@ If you prefer to run the engine locally on your machine, ensure Docker is instal
 ```bash
 # 1. Clone the repository
 
-git clone [https://github.com/AlaaElgazwy/math-engine-web.git](https://github.com/AlaaElgazwy/math-engine-web.git)
+git clone [https://github.com/AlaaElgazwy/MathEnginProject.git](https://github.com/AlaaElgazwy/MathEnginProject.git)
 cd math-engine-web
 
 # 2. Build the Docker image
