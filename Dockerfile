@@ -4,23 +4,17 @@ FROM ubuntu:22.04
 # منع النوافذ التفاعلية أثناء التثبيت
 ENV DEBIAN_FRONTEND=noninteractive
 
-# تثبيت Octave ومكتبات التطوير المطلوبة، و sympy، وأداة wget
+# تثبيت Octave ومكتبات التطوير، و sympy، وأداة ttyd الأحدث بدلاً من gotty
 RUN apt-get update && apt-get install -y \
     octave \
     liboctave-dev \
     python3-sympy \
-    wget \
+    ttyd \
     make \
     && rm -rf /var/lib/apt/lists/*
 
-# تثبيت الحزمة الرمزية (symbolic) من داخل Octave نفسه
+# تثبيت الحزمة الرمزية (symbolic)
 RUN octave --no-gui --eval "pkg install -forge symbolic"
-
-# تحميل وتثبيت أداة GoTTY (لتحويل الـ Terminal إلى صفحة ويب)
-RUN wget https://github.com/yudai/gotty/releases/download/v1.0.1/gotty_linux_amd64.tar.gz \
-    && tar -zxvf gotty_linux_amd64.tar.gz \
-    && mv gotty /usr/local/bin/ \
-    && rm gotty_linux_amd64.tar.gz
 
 # تحديد مسار العمل
 WORKDIR /app
@@ -31,5 +25,6 @@ COPY matricesgradution.m .
 # فتح البورت 8080 للويب
 EXPOSE 8080
 
-# تشغيل خادم GoTTY الذي سيعرض واجهة Octave للمستخدم
-CMD ["gotty", "-w", "-p", "8080", "octave", "--no-gui", "--eval", "matricesgradution"]
+# تشغيل خادم ttyd الذي سيعرض واجهة Octave للمستخدم ويدعم الموبايل
+# حرف W الكبير يسمح للمستخدم بالكتابة والتفاعل
+CMD ["ttyd", "-W", "-p", "8080", "octave", "--no-gui", "--eval", "matricesgradution"]
