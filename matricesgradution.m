@@ -13,6 +13,7 @@ function matricesgradution()
         end
     end
     
+    format short g; % 🚀 لعرض الأرقام بشكل نظيف وبدون كسور علمية (e)
     clear; clc;
 
     % تقرير الجلسة
@@ -30,7 +31,7 @@ function matricesgradution()
         fprintf('1. Matrix Operations (Arithmetic, Rank, Characteristic Analysis, etc.)\n');
         fprintf('2. Solve System AX = B (Detailed Steps)\n');
         fprintf('3. Theory of Equations (Roots Solving)\n');
-        fprintf('4. EXIT & EXPORT FULL REPORT\n');
+        fprintf('4. EXIT & PRINT FULL REPORT\n');
         
         choiceInput = input('>> Select Category (1-4): ', 's');
         mainChoice = str2double(choiceInput);
@@ -79,16 +80,18 @@ function matricesgradution()
                 if ~isempty(sol), fprintf('Roots:\n'); disp(sol); end
                 sessionReport = [sessionReport; {['Equation Solving: ', eqStr]}; {steps}; {'----------------'}]; %#ok<AGROW>
 
-            case 4 % Exit and Export
+            case 4 % Exit and Print Report
                 keepRunning = false;
-                fileName = input('>> Enter Report Name (e.g., Alaa_Project.txt): ', 's');
-                % Note: writing to txt/ascii in Octave to avoid Excel dependency issues in Docker
-                try
-                    save('-ascii', fileName, 'sessionReport');
-                    fprintf('Success! Full session exported to %s.\n', fileName);
-                catch
-                    fprintf('Note: Export requires additional packages. Session ended.\n');
+                fprintf('\n================================================\n');
+                fprintf('               FINAL SESSION REPORT               \n');
+                fprintf('================================================\n');
+                % طباعة التقرير على الشاشة ليتمكن المستخدم من نسخه بسهولة
+                for i = 1:length(sessionReport)
+                    fprintf('%s\n', char(sessionReport{i}));
                 end
+                fprintf('================================================\n');
+                fprintf('NOTE: Because this is running on the web, please SELECT and COPY the text above to save your report.\n');
+                fprintf('Session ended. Thank you!\n');
                 
             otherwise
                 fprintf('Invalid selection. Please try again.\n');
@@ -133,6 +136,7 @@ function [res, steps] = performMatrixOp(A, op)
         case 4 % Inverse
             if r == c && det(A) ~= 0
                 res = inv(A); 
+                res(abs(res) < 1e-10) = 0; % 🚀 تصفير الكسور المتناهية الصغر لتظهر الأرقام صحيحة
                 steps = sprintf('Steps: 1. Verified square matrix. 2. Calculated determinant (|A| = %.2f).\n', det(A));
                 steps = [steps, '3. Matrix Inversion completed.'];
             else
@@ -149,6 +153,7 @@ function [res, steps] = performMatrixOp(A, op)
                 for j = i+1:r
                     factor = tempA(j,i)/pivot;
                     tempA(j,:) = tempA(j,:) - factor * tempA(i,:);
+                    tempA(abs(tempA) < 1e-10) = 0; % 🚀 تصفير الكسور المتناهية الصغر
                     steps = [steps, sprintf('  R%d = R%d - (%.2f)R%d\n', j, j, factor, i)]; 
                 end
             end
@@ -175,21 +180,27 @@ function [X, steps] = solveSystemWithDetails(A, B)
     steps = 'Method: Direct Solver\n';
     if r == c && det(A) ~= 0
         X = A\B;
+        X(abs(X) < 1e-10) = 0; % 🚀 تصفير الكسور المتناهية الصغر
         steps = [steps, sprintf('1. Matrix A is %dx%d.\n2. Determinant is %.2f.\n3. Found unique solution vector X.', r, c, det(A))];
     else
         X = []; steps = [steps, 'Error: System has no unique solution.'];
     end
-end
 
+end
 %% --- Symbolic Solve ---
 function [sol, steps] = solveSymbolicEq(eqStr)
     syms x
     try
-        cleanEq = strrep(eqStr, '=0', '');
-        eqn = str2sym(cleanEq); % استخدام str2sym بدلاً من eval لدواعي الأمان والتوافق مع Octave
+        % إزالة علامة =0 وتحويل الحروف لصغيرة لضمان التوافق
+        cleanEq = lower(strrep(eqStr, '=0', '')); 
+        
+        % رجعناها لـ eval زي كودك الأصلي لأنها الأقوى والأكثر توافقاً
+        eqn = eval(cleanEq); 
         sol = solve(eqn == 0, x);
         steps = sprintf('Steps: 1. Defined sym x. 2. Set expression %s to zero. 3. Calculated roots.', char(eqn));
-    catch
-        sol = []; steps = 'Error: Invalid syntax.';
+    catch ME
+        % هذا السطر سيطبع لك سبب الخطأ التقني الحقيقي لو حصلت أي مشكلة
+        sol = []; 
+        steps = sprintf('Error: %s\n', ME.message); 
     end
 end
