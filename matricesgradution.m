@@ -12,23 +12,26 @@ function matricesgradution()
         end
     end
     
+    % إغلاق التحذيرات المزعجة للحفاظ على نظافة الشاشة
+    warning('off', 'all'); 
+    
     format short g; 
     clear; clc;
 
-    % --- تعريف الألوان ---
+    % --- تعريف الألوان بشكل صحيح لبيئة Octave ---
     global c_red c_green c_blue c_cyan c_yellow c_reset;
-    c_red = '\033[1;31m';
-    c_green = '\033[1;32m';
-    c_blue = '\033[1;34m';
-    c_cyan = '\033[1;36m';
-    c_yellow = '\033[1;33m';
-    c_reset = '\033[0m';
+    c_red = sprintf('\033[1;31m');
+    c_green = sprintf('\033[1;32m');
+    c_blue = sprintf('\033[1;34m');
+    c_cyan = sprintf('\033[1;36m');
+    c_yellow = sprintf('\033[1;33m');
+    c_reset = sprintf('\033[0m');
     % -----------------------------------------
 
     sessionReport = {'--- PRO MATH ENGINE SESSION REPORT ---'; ...
                     ['Date: ', datestr(now)]; ...
                     '---------------------------------------'}; 
-    mem = struct(); % الذاكرة الخاصة بالمستخدم
+    mem = struct(); 
     keepRunning = true;
 
     while keepRunning
@@ -194,7 +197,6 @@ function matricesgradution()
 end
 
 %% --- HELPER: COLOR PROMPT WITH FLUSH ---
-% هذه الدالة تجبر الألوان على العمل في بيئة الويب ولا تنهار!
 function str = promptUserInput(promptText)
     fprintf('%s', promptText);
     fflush(stdout); 
@@ -297,11 +299,10 @@ function plotAscii(eqStr)
         y_col = round(cols/2);
         grid(:, y_col) = '|'; % Y-axis
         
-        % رسم محور السينات عند نقطة الصفر الحقيقية
         zero_row = round(1 + (rows - 1) * (max_y - 0) / (max_y - min_y));
         if zero_row >= 1 && zero_row <= rows
             grid(zero_row, :) = '-';
-            grid(zero_row, y_col) = '+'; % نقطة الأصل
+            grid(zero_row, y_col) = '+'; % Origin
         end
         
         for i = 1:cols
