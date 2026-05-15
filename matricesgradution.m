@@ -1,7 +1,7 @@
 %% ========================================================
-%% PROJECT: ADVANCED MATHEMATICAL ENGINE (COMPREHENSIVE VERSION)
+%% PROJECT: ADVANCED MATHEMATICAL ENGINE (WEB/CLOUD CLI)
 %% DEVELOPER: ALAA 
-%% DESCRIPTION: Matrix Ops, Linear Systems, and Spectral Analysis
+%% DESCRIPTION: Matrix Ops, Linear Systems, Spectral Analysis & Memory
 %% ========================================================
 function matricesgradution()
     % تحميل حزمة الرموز الرياضية
@@ -28,6 +28,7 @@ function matricesgradution()
     sessionReport = {'--- PRO MATH ENGINE SESSION REPORT ---'; ...
                     ['Date: ', datestr(now)]; ...
                     '---------------------------------------'}; 
+    mem = struct(); % الذاكرة الخاصة بالمستخدم
     keepRunning = true;
 
     while keepRunning
@@ -48,16 +49,17 @@ function matricesgradution()
         fprintf('%s==========================================================%s\n', c_blue, c_reset);
 
         fprintf('\n%s[MAIN MENU]%s\n', c_green, c_reset);
-        fprintf('1. Matrix Operations (Arithmetic, Rank, Characteristic Analysis, etc.)\n');
+        fprintf('1. Matrix Operations (Arithmetic, Rank, Characteristic Analysis)\n');
         fprintf('2. Solve System AX = B (Detailed Steps)\n');
         fprintf('3. Theory of Equations (Roots Solving & Graphing)\n');
-        fprintf('4. EXIT & PRINT FULL REPORT\n');
+        fprintf('4. View Workspace Memory (Saved Matrices)\n');
+        fprintf('5. EXIT & PRINT FULL REPORT\n');
         
-        choiceInput = input(sprintf('\n%s>> Select Category (1-4): %s', c_cyan, c_reset), 's');
+        choiceInput = input(sprintf('\n%s>> Select Category (1-5): %s', c_cyan, c_reset), 's');
         mainChoice = str2double(choiceInput);
         
-        if isnan(mainChoice) || ~ismember(mainChoice, 1:4)
-            fprintf('%s!! Invalid Input: Please enter a NUMBER (1-4).%s\n', c_red, c_reset);
+        if isnan(mainChoice) || ~ismember(mainChoice, 1:5)
+            fprintf('%s!! Invalid Input: Please enter a NUMBER (1-5).%s\n', c_red, c_reset);
             pauseReturn();
             continue;
         end
@@ -68,40 +70,38 @@ function matricesgradution()
                 while stayInCategory
                     clc;
                     fprintf('\n%s--- Matrix Operations ---%s\n', c_blue, c_reset);
-                    A = getRobustMatrixInput(sprintf('%s>> Enter Matrix A (e.g., [1 2; 3 4]): %s', c_yellow, c_reset));
+                    A = getRobustMatrixInput(sprintf('%s>> Enter Matrix A (e.g., [1 2; 3 4] or Saved Name): %s', c_yellow, c_reset), mem);
                     
                     fprintf('\n%s[Matrix Sub-Menu]%s\n', c_green, c_reset);
                     fprintf('1. Addition (A+B)    2. Subtraction (A-B)    3. Multiplication (A*B)\n');
                     fprintf('4. Inverse (A^-1)   5. Rank                  6. Gaussian Steps\n');
                     fprintf('7. Full Characteristic Analysis (Matrix, Eq, & Eigenvalues)\n');
                     
-                    % Loop to ensure valid operation choice
                     validOp = false;
                     while ~validOp
                         opStr = input(sprintf('%s>> Choice (1-7): %s', c_cyan, c_reset), 's');
                         op = str2double(opStr);
                         if ismember(op, 1:7), validOp = true;
-                        else, fprintf('%s!! Invalid Choice. Please enter a number between 1 and 7.%s\n', c_red, c_reset); end
+                        else, fprintf('%s!! Invalid Choice. Enter a number between 1 and 7.%s\n', c_red, c_reset); end
                     end
                     
                     if ismember(op, [1, 2, 3])
-                        B = getRobustMatrixInput(sprintf('%s>> Enter Matrix B: %s', c_yellow, c_reset));
+                        B = getRobustMatrixInput(sprintf('%s>> Enter Matrix B (or Saved Name): %s', c_yellow, c_reset), mem);
                         [res, steps] = performBasicOps(A, B, op);
                     else
                         [res, steps] = performMatrixOp(A, op);
                     end
                     
-                    % Check if operation caused a math error (like dimension mismatch)
                     if strncmp(steps, 'Error', 5)
                         fprintf('\n%s%s%s\n', c_red, steps, c_reset);
                     else
                         fprintf('\n%s--- Solution Steps ---%s\n%s\n', c_blue, c_reset, steps);
                         if ~isempty(res)
                             fprintf('%sResulting Matrix/Value:%s\n', c_green, c_reset); disp(res); 
+                            mem = promptSaveToMemory(mem, res);
                         end
                         sessionReport = [sessionReport; {'Matrix Operation Path'}; {steps}; {'----------------'}]; %#ok<AGROW>
                     end
-                    
                     stayInCategory = postOperationMenu();
                 end
 
@@ -110,8 +110,8 @@ function matricesgradution()
                 while stayInCategory
                     clc;
                     fprintf('\n%s--- Solving System AX = B ---%s\n', c_blue, c_reset);
-                    A = getRobustMatrixInput(sprintf('%s>> Enter Coefficient Matrix A: %s', c_yellow, c_reset));
-                    B = getRobustMatrixInput(sprintf('%s>> Enter Constants Vector B: %s', c_yellow, c_reset));
+                    A = getRobustMatrixInput(sprintf('%s>> Enter Coefficient Matrix A (or Saved Name): %s', c_yellow, c_reset), mem);
+                    B = getRobustMatrixInput(sprintf('%s>> Enter Constants Vector B (or Saved Name): %s', c_yellow, c_reset), mem);
                     [X, steps] = solveSystemWithDetails(A, B);
                     
                     if strncmp(steps, 'Error', 5)
@@ -120,10 +120,10 @@ function matricesgradution()
                         fprintf('\n%s--- Solution Steps ---%s\n%s\n', c_blue, c_reset, steps);
                         if ~isempty(X)
                             fprintf('%sSolution Vector X:%s\n', c_green, c_reset); disp(X); 
+                            mem = promptSaveToMemory(mem, X);
                         end
                         sessionReport = [sessionReport; {'Solving Linear System AX=B'}; {steps}; {'----------------'}]; %#ok<AGROW>
                     end
-                    
                     stayInCategory = postOperationMenu();
                 end
 
@@ -145,11 +145,24 @@ function matricesgradution()
                         end
                         sessionReport = [sessionReport; {['Equation Solving: ', eqStr]}; {steps}; {'----------------'}]; %#ok<AGROW>
                     end
-                    
                     stayInCategory = postOperationMenu();
                 end
 
             case 4 
+                clc;
+                fprintf('\n%s--- Workspace Memory (Saved Matrices) ---%s\n', c_blue, c_reset);
+                fields = fieldnames(mem);
+                if isempty(fields)
+                    fprintf('%sMemory is currently empty. Try saving a result first!%s\n', c_yellow, c_reset);
+                else
+                    for k = 1:numel(fields)
+                        fprintf('%s>> Variable: [%s]%s\n', c_green, fields{k}, c_reset);
+                        disp(mem.(fields{k}));
+                    end
+                end
+                pauseReturn();
+
+            case 5 
                 keepRunning = false;
                 clc;
                 fprintf('\n%s================================================%s\n', c_green, c_reset);
@@ -167,12 +180,19 @@ function matricesgradution()
     end
 end
 
-%% --- NEW HELPER: Robust Matrix Input (Prevents Crashes) ---
-function M = getRobustMatrixInput(promptText)
-    global c_red c_reset;
+%% --- ROBUST INPUT HELPER (WITH MEMORY) ---
+function M = getRobustMatrixInput(promptText, mem)
+    global c_red c_green c_reset;
     while true
-        str = input(promptText, 's');
+        str = strtrim(input(promptText, 's'));
         if isempty(str), continue; end
+        
+        if isfield(mem, str)
+            M = mem.(str);
+            fprintf('%s--> Loaded [%s] from memory successfully.%s\n', c_green, str, c_reset);
+            break;
+        end
+        
         try
             M = eval(str);
             if isnumeric(M) || islogical(M)
@@ -181,12 +201,27 @@ function M = getRobustMatrixInput(promptText)
                 fprintf('%s!! Error: Input must be a numerical matrix. Try again.%s\n', c_red, c_reset);
             end
         catch
-            fprintf('%s!! Syntax Error: Check your brackets/spaces (e.g., [1 2; 3 4]). Try again.%s\n', c_red, c_reset);
+            fprintf('%s!! Syntax Error or Unknown Variable. Try again.%s\n', c_red, c_reset);
         end
     end
 end
 
-%% --- NEW HELPER: Post-Operation Menu (Go Back or Main Menu) ---
+%% --- MEMORY SAVE HELPER ---
+function mem = promptSaveToMemory(mem, data)
+    global c_cyan c_green c_red c_reset;
+    saveName = input(sprintf('\n%s>> Save this result to memory? (Enter name like M1, or press [Enter] to skip): %s', c_cyan, c_reset), 's');
+    saveName = strtrim(saveName);
+    if ~isempty(saveName)
+        if isvarname(saveName)
+            mem.(saveName) = data;
+            fprintf('%s--> Result successfully saved as [%s] in memory.%s\n', c_green, saveName, c_reset);
+        else
+            fprintf('%s!! Invalid variable name. Not saved.%s\n', c_red, c_reset);
+        end
+    end
+end
+
+%% --- POST-OPERATION MENU HELPER ---
 function stay = postOperationMenu()
     global c_cyan c_yellow c_red c_reset;
     while true
@@ -206,7 +241,7 @@ end
 
 %% --- Helper Function for UX Pause ---
 function pauseReturn()
-    input(sprintf('\n\033[1;33mPress [Enter] to continue...\033[0m'), 's');
+    input(sprintf('\n\033[1;33mPress [Enter] to return to the Main Menu...\033[0m'), 's');
 end
 
 %% --- ASCII Plotter ---
@@ -215,35 +250,22 @@ function plotAscii(eqStr)
         fprintf('\n\033[1;36m--- ASCII Graph (x from -10 to 10) ---\033[0m\n');
         cleanEq = lower(strrep(eqStr, '=0', ''));
         vecEq = vectorize(cleanEq); 
-        
         x = linspace(-10, 10, 50); 
         y = eval(vecEq); 
+        if length(y) == 1, y = y * ones(1, 50); end
         
-        if length(y) == 1
-            y = y * ones(1, 50);
-        end
-        
-        rows = 15; cols = 50;
-        grid = repmat(' ', rows, cols);
-        
-        x_row = round(rows/2);
-        y_col = round(cols/2);
-        grid(x_row, :) = '-';
-        grid(:, y_col) = '|';
-        grid(x_row, y_col) = '+';
+        rows = 15; cols = 50; grid = repmat(' ', rows, cols);
+        x_row = round(rows/2); y_col = round(cols/2);
+        grid(x_row, :) = '-'; grid(:, y_col) = '|'; grid(x_row, y_col) = '+';
         
         min_y = min(y); max_y = max(y);
         if max_y == min_y, max_y = min_y + 1; min_y = min_y - 1; end
         
         for i = 1:cols
             r = round(1 + (rows - 1) * (max_y - y(i)) / (max_y - min_y));
-            r = max(1, min(rows, r));
-            grid(r, i) = '*';
+            r = max(1, min(rows, r)); grid(r, i) = '*';
         end
-        
-        for r = 1:rows
-            fprintf('\033[1;32m%s\033[0m\n', grid(r,:));
-        end
+        for r = 1:rows, fprintf('\033[1;32m%s\033[0m\n', grid(r,:)); end
     catch
         fprintf('\033[1;31m[Graph unavailable for this equation]\033[0m\n');
     end
@@ -251,8 +273,7 @@ end
 
 %% --- Basic Ops ---
 function [res, steps] = performBasicOps(A, B, op)
-    res = []; steps = '';
-    szA = size(A); szB = size(B);
+    res = []; steps = ''; szA = size(A); szB = size(B);
     switch op
         case 1
             if isequal(szA, szB), res = A + B; steps = sprintf('Steps: 1. Validated dimensions (%dx%d). 2. Performed element-wise addition.', szA(1), szA(2));
@@ -268,8 +289,7 @@ end
 
 %% --- Matrix Ops ---
 function [res, steps] = performMatrixOp(A, op)
-    [r, c] = size(A); steps = ''; res = [];
-    syms L
+    [r, c] = size(A); steps = ''; res = []; syms L
     switch op
         case 4
             if r == c && det(A) ~= 0
