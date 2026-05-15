@@ -12,13 +12,11 @@ function matricesgradution()
         end
     end
     
-    % إغلاق التحذيرات المزعجة للحفاظ على نظافة الشاشة
     warning('off', 'all'); 
-    
     format short g; 
     clear; clc;
 
-    % --- تعريف الألوان بشكل صحيح لبيئة Octave ---
+    % --- تعريف الألوان ---
     global c_red c_green c_blue c_cyan c_yellow c_reset;
     c_red = sprintf('\033[1;31m');
     c_green = sprintf('\033[1;32m');
@@ -52,22 +50,49 @@ function matricesgradution()
         fprintf('%s==========================================================%s\n', c_blue, c_reset);
 
         fprintf('\n%s[MAIN MENU]%s\n', c_green, c_reset);
+        fprintf('0. [HELP & TUTORIAL] - Read before using!\n');
         fprintf('1. Matrix Operations (Arithmetic, Rank, Characteristic Analysis)\n');
         fprintf('2. Solve System AX = B (Detailed Steps)\n');
         fprintf('3. Theory of Equations (Roots Solving & Graphing)\n');
         fprintf('4. View Workspace Memory (Saved Matrices)\n');
         fprintf('5. EXIT & PRINT FULL REPORT\n');
         
-        choiceInput = promptUserInput(sprintf('\n%s>> Select Category (1-5): %s', c_cyan, c_reset));
+        choiceInput = promptUserInput(sprintf('\n%s>> Select Category (0-5): %s', c_cyan, c_reset));
         mainChoice = str2double(choiceInput);
         
-        if isnan(mainChoice) || ~ismember(mainChoice, 1:5)
-            fprintf('%s!! Invalid Input: Please enter a NUMBER (1-5).%s\n', c_red, c_reset);
+        if isnan(mainChoice) || ~ismember(mainChoice, 0:5)
+            fprintf('%s!! Invalid Input: Please enter a NUMBER (0-5).%s\n', c_red, c_reset);
             pauseReturn();
             continue;
         end
         
         switch mainChoice
+            case 0 % --- Help & Tutorial ---
+                clc;
+                fprintf('\n%s==========================================================%s\n', c_blue, c_reset);
+                fprintf('%s                  ENGINE HELP & TUTORIAL                  %s\n', c_yellow, c_reset);
+                fprintf('%s==========================================================%s\n\n', c_blue, c_reset);
+                
+                fprintf('%s[1] How to enter Matrices:%s\n', c_green, c_reset);
+                fprintf('  - Enclose in square brackets: [ ]\n');
+                fprintf('  - Separate elements in a row with spaces: 1 2 3\n');
+                fprintf('  - Separate rows with a semicolon: ;\n');
+                fprintf('  - Example: [1 2; 3 4] creates a 2x2 matrix.\n\n');
+                
+                fprintf('%s[2] How to enter Equations:%s\n', c_green, c_reset);
+                fprintf('  - Use ''x'' as the variable.\n');
+                fprintf('  - MUST use ''*'' for multiplication! (e.g., 5*x NOT 5x)\n');
+                fprintf('  - Use ''^'' for powers (e.g., x^2).\n');
+                fprintf('  - Do NOT include ''=0''. Just type the expression.\n');
+                fprintf('  - Example: x^2 - 5*x + 6\n\n');
+                
+                fprintf('%s[3] How to use Workspace Memory:%s\n', c_green, c_reset);
+                fprintf('  - After any operation, you can save the result.\n');
+                fprintf('  - Give it a valid name (letters/numbers, e.g., M1, ansA).\n');
+                fprintf('  - Next time the engine asks for a matrix, just type M1!\n\n');
+                
+                pauseReturn();
+
             case 1 
                 stayInCategory = true;
                 while stayInCategory
@@ -372,7 +397,7 @@ function [res, steps] = performMatrixOp(A, op)
             steps = sprintf('Steps: 1. Transformed to REF. 2. Counted independent rows. Rank = %d', res);
         case 6
             tempA = A; 
-            steps = 'Gaussian Elimination Progress:\n';
+            steps = sprintf('Gaussian Elimination Progress:\n');
             for i = 1:min(r,c)
                 pivot = tempA(i,i); 
                 steps = [steps, sprintf('- Pivot at (%d,%d)=%.2f\n', i, i, pivot)]; 
@@ -400,7 +425,7 @@ end
 %% --- Solve AX=B ---
 function [X, steps] = solveSystemWithDetails(A, B)
     [r, c] = size(A); 
-    steps = 'Method: Direct Solver\n';
+    steps = sprintf('Method: Direct Solver\n');
     
     if r == c && det(A) ~= 0
         X = A\B; 
